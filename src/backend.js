@@ -1,4 +1,4 @@
-const host = "localhost"
+const host = "ec2-63-35-226-22.eu-west-1.compute.amazonaws.com"
 const port = 5000
 const signupURL = `http://${host}:${port}/signup`
 const loginURL = `http://${host}:${port}/login`

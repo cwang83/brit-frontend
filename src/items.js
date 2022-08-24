@@ -1,26 +1,42 @@
 import { Component } from "react";
-import { Navigate } from 'react-router-dom';
-
+import { Link, Navigate } from "react-router-dom";
 import { itemsURL } from "./backend"
+
+const itemRows = 3
 
 class Items extends Component {
     constructor(props) {
         super(props);
         this.handleItemChange = this.handleItemChange.bind(this);
-        let items_list = []
-        for(var i = 0; i < 3; i++) {
-            items_list.push({item: "", price: 0})
+        this.handleSummaryClick = this.handleSummaryClick.bind(this);
+        var items_list = []
+        for(var i = 0; i < itemRows; i++) {
+            items_list.push({item: "", price: 0.0})
         }
         this.state = {items: items_list}
     }
 
     componentDidMount() {
-        console.log("mount")
-        // this.setState({items: items_list})
+        const user = this.props.user
+        const isAuth = this.props.isAuthenticated
+        if (user.length > 0 && isAuth) {
+            const userItemsURL = itemsURL + `/${user}`
+            fetch(userItemsURL).then(resp => resp.json()).then(
+                userItems => {
+                    var itemsList = []
+                    for (var i = 0; i < userItems.length; i++) {
+                        itemsList.push({item: userItems[i]["item"], price: parseFloat(userItems[i]["price"])})
+                    }
+                    for (var i = itemsList.length; i < itemRows; i++) {
+                        itemsList.push({item: "", price: 0.0})
+                    }
+                    this.setState({items: itemsList})
+                }
+            )
+        }
     }
 
     handleItemChange(e, i) {
-        console.log(e.target.name, e.target.value, i)
         if (e.target.name === "item") {
             this.setState({
                 items: [
@@ -39,7 +55,7 @@ class Items extends Component {
                     ...this.state.items.slice(0, i),
                     {
                         item: this.state.items[i].item,
-                        price: e.target.value
+                        price: parseFloat(e.target.value)
                     },
                     ...this.state.items.slice(i+1),
                 ]
@@ -47,10 +63,25 @@ class Items extends Component {
         }
     }
 
+    handleSummaryClick(user_items) {
+        const user = this.props.user
+        const isAuth = this.props.isAuthenticated
+        if (user.length > 0 && isAuth) {
+            const userItemsURL = itemsURL + `/${user}`
+            fetch(userItemsURL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "Application/json",
+                },
+                body: JSON.stringify(user_items)
+            })
+        }
+    }
+
     render() {
-        // if (this.props.isAuthenticated === false) {
-        //     return <Navigate to="/login" />
-        // }
+        if (this.props.isAuthenticated === false) {
+            return <Navigate to="/login" />
+        }
 
         return (
             <form>
@@ -71,7 +102,9 @@ class Items extends Component {
                     <input name="price" type="number" value={this.state.items[2].price} onChange={(e) => this.handleItemChange(e, 2)} />
                 </div>
                 <div>
-                    <button type="button">Summary</button>
+                    <Link to="/summary">
+                        <button type="button" onClick={() => this.handleSummaryClick(this.state.items)}>Summary</button>
+                    </Link>
                 </div>
             </form>
         )
